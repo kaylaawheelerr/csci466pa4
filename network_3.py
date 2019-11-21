@@ -1,3 +1,9 @@
+'''
+Created on November 21, 2019
+
+@author: Cole Sluggett, Kayla Wheeler
+'''
+
 from collections import *
 import queue
 import threading
@@ -141,7 +147,7 @@ class Router:
         self.intf_L = [Interface(max_queue_size) for _ in range(len(cost_D))]
         #save neighbors and interfeces on which we connect to them
         self.cost_D = cost_D    # {neighbor: {interface: cost}}
-        #TODO: set up the routing table for connected hosts
+        
         self.rt_tbl_D = {}
         self.cost_D_duplicate = cost_D
         self.rt_tbl_D = cost_D.copy()
@@ -153,10 +159,6 @@ class Router:
         for location, null in cost_D.items():
             for nil, item in cost_D[location].items():
                 self.rt_tbl_D.update({location: {self.name: item}})
-  
-
-
-
 
         print('%s: Initialized routing table' % self)
         self.print_routes()
@@ -166,45 +168,30 @@ class Router:
         
     ## Print routing table
     def print_routes(self):
-        # TODO: print the routes as a two dimensional table
-        print("ROUTING TABLE FOR: " + self.name)
-
+        print("Table: " + self.name)
         col_items = set()
         for col_item in set(self.global_rt_tbl_D.keys()):
             col_items.update(self.global_rt_tbl_D[col_item].keys())
-
         col_items = sorted(col_items, key=self.return_ascii) 
-
         for i in range(len(col_items)+1):
             print("╒══════", end="")
         print("╕")
-
         row = "| {}  |".format(self.name)
         for location in col_items:
             row += "  {} |".format(location)
         print(row)
-
         for i in range(len(col_items) + 1):
             print("╞══════", end="")
         print("|")
-
-
         column = ['RA', 'RB', 'RC', 'RD']
-
         item_info = ""
-
-
         for item in column:
-
             item_info += "| {}  |".format(str(item))
-
-
             for col in col_items:
                 try:
                     item_info += "  {}  |".format(str(self.global_rt_tbl_D[item][col]).strip("[]"))
                 except KeyError:
                     pass
-
 
             print(item_info)
             item_info = ""
@@ -213,15 +200,9 @@ class Router:
             print("╘══════", end="")
         print("╛\n")
 
-
-
-
-
-
     ## called when printing the object
     def __str__(self):
         return self.name
-
 
     ## look through the content of incoming interfaces and 
     # process data and control packets
@@ -245,15 +226,8 @@ class Router:
     #  @param p Packet to forward
     #  @param i Incoming interface number for packet p
     def forward_packet(self, p, i):
-
         intf = None
-
         try:
-            # TODO: Here you will need to implement a lookup into the 
-            # forwarding table to find the appropriate outgoing interface
-            # for now we assume the outgoing interface is 1
-
-        
             try:
                 for location in self.rt_tbl_D[p.dst].items():
                     try:
@@ -263,10 +237,8 @@ class Router:
                         for item, val in self.cost_D_duplicate[p.dst].items():
                             intf = int(item)
                             break
-
             except KeyError:
                 pass
-
 
             self.intf_L[intf].put(p.to_byte_S(), 'out', True)
             print('%s: forwarding packet "%s" from interface %d to %d' % \
@@ -279,27 +251,15 @@ class Router:
     ## send out route update
     # @param i Interface number on which to send out a routing update
     def send_routes(self, i):
-        # TODO: Send out a routing table update
-        #create a routing table update packet
-
         packet_encoded = "{}--.".format(self.name)
-
         item_list = self.rt_tbl_D.items()
-
-        #print(item_list)
-
         for location, value in item_list:
-
             items = value.items()
-
             for intf, ncost in items:
-
                 name = str(location)
                 interface_name = str(intf)
                 node_cost = str(ncost)
-
                 packet_encoded += "{}-{}-{}-{}".format(name, interface_name, node_cost, "--")
-
         p = NetworkPacket(0, 'control', packet_encoded)
         try:
             print('%s: sending routing update "%s" from interface %d' % (self, p, i))
@@ -312,13 +272,9 @@ class Router:
     ## forward the packet according to the routing table
     #  @param p Packet containing routing information
     def update_routes(self, p, i):
-        #TODO: add logic to update the routing tables and
-
-        #print(p)
         continueRefresh = False
         fetch_info = p.data_S.split("--.")
         name = fetch_info[0]
-    
         for path in fetch_info[1].split("--"):
             if len(str(path)) > 0:
                 path_details = path.split("-")
@@ -327,7 +283,6 @@ class Router:
                     if i == '':
                         if len(path_details) == 2:
                             del path_details
-
                         else:
                             del path_details[count]
                         break
@@ -335,76 +290,34 @@ class Router:
                         count = count + 1
 
                 try:
-   
-
                     self.global_rt_tbl_D[name][path_details[0]] = [int(path_details[2])]
-
                     if path_details[0] == self.name:
-
-
                         interface1 = list(self.cost_D_duplicate[name].keys())
-
                         self.rt_tbl_D[path_details[0]] = {int(interface1[0]): 0}
-
                         self.global_rt_tbl_D[self.name][path_details[0]] = [0]
-
-
                     if path_details[0] not in self.rt_tbl_D and path_details[0] not in self.cost_D_duplicate:
-
-
                         val1 = list(self.cost_D_duplicate[name].values())
-
                         interface2 = list(self.cost_D_duplicate[name].keys())
-
                         self.rt_tbl_D[path_details[0]] = {int(interface2[0]): int(path_details[2]) + val1[0]}
-
                         self.global_rt_tbl_D[self.name][path_details[0]] = [int(path_details[2]) + val1[0]]
-
                         continueRefresh = True
-
                     elif path_details[0] not in self.cost_D_duplicate and path_details[0] in self.rt_tbl_D:
-
-
                         val2 = list(self.cost_D_duplicate[name].values())
-
                         interface3 = list(self.cost_D_duplicate[name].keys())
-
                         val3 = list(self.rt_tbl_D[path_details[0]].values())
-
                         if val3[0] > int(val2[0]) + int(path_details[2]):
-
                             self.rt_tbl_D[path_details[0]] = {int(interface3[0]): int(path_details[2]) + val2[0]}
-
                             self.global_rt_tbl_D[self.name][path_details[0]] = [int(path_details[2]) + val2[0]]
-
                             continueRefresh = True
-
-
                 except UnboundLocalError:
                     pass
 
                 if continueRefresh:
-
-
                     for key, value in self.cost_D.items():
-
                         for inf, path_cost in value.items():
-
-                         
                             if 'H' not in key:
                                 self.send_routes(inf)
-
-
-
-
-
-
-
-
-        # possibly send out routing updates
-        #print('%s: Received routing update %s from interface %d' % (self, p, i))
-
-                
+            
     ## thread target for the host to keep forwarding data
     def run(self):
         print (threading.currentThread().getName() + ': Starting')

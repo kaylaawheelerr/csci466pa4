@@ -1,3 +1,9 @@
+'''
+Created on November 21, 2019
+
+@author: Cole Sluggett, Kayla Wheeler
+'''
+
 import network_3 as network
 import link_3 as link
 import threading
@@ -6,7 +12,7 @@ import sys
 
 ##configuration parameters
 router_queue_size = 0 #0 means unlimited
-simulation_time = 2.5   #give the network sufficient time to execute transfers
+simulation_time = 8   #give the network sufficient time to execute transfers
 
 if __name__ == '__main__':
     object_L = [] #keeps track of objects, so we can kill their threads at the end
@@ -54,9 +60,6 @@ if __name__ == '__main__':
     link_layer.add_link(link.Link(router_b, 1, router_d, 0))
     link_layer.add_link(link.Link(router_c, 1, router_d, 1))
     link_layer.add_link(link.Link(router_d, 2, host_2, 0))
-
-
-
     
     
     #start all the objects
@@ -76,9 +79,9 @@ if __name__ == '__main__':
             obj.print_routes()
 
     #send packet from host 1 to host 2
-    host_1.udt_send('H2', 'H1 broadcasts Cole is cool')
+    host_1.udt_send('H2', 'Message from H1')
     sleep(simulation_time)
-    host_2.udt_send('H1', 'H2 broadcasts Are you sure about that')
+    host_2.udt_send('H1', 'Message from H2')
     sleep(simulation_time)
     
     

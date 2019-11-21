@@ -1,3 +1,8 @@
+'''
+Created on November 21, 2019
+
+@author: Cole Sluggett, Kayla Wheeler
+'''
 import network_1 as network
 import link_1 as link
 import threading
